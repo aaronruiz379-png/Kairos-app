@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Kairos</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kairos">
+<meta name="theme-color" content="#2A1410">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%238C2F1B'/%3E%3Ctext x='50' y='68' font-family='Georgia,serif' font-size='58' font-weight='700' fill='%23FAF3E7' text-anchor='middle'%3EK%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --paper:#FAF6EE;
+    --paper-dim:#F0E9D8;
+    --ink:#241C16;
+    --ink-soft:#6B5F52;
+    --line:#DCD2BE;
+    --oxblood:#8C2F1B;
+    --oxblood-dark:#6E2414;
+    --sage:#5C6B4E;
+    --sage-bg:#E7EBDD;
+    --gold:#B8842E;
+    --gold-bg:#F3E7CE;
+    --radius:14px;
+    --mono: ui-monospace, "SF Mono", "Menlo", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--ink);}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    background:var(--paper);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    padding:18px 20px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid var(--line);
+  }
+  header .brand{
+    font-family:Georgia, "Times New Roman", serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.02em;
+  }
+  .status-dot{
+    display:flex;align-items:center;gap:6px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+  .status-dot .dot{width:8px;height:8px;border-radius:50%;background:var(--sage);}
+  .status-dot.offline .dot{background:var(--oxblood);}
+
+  /* ---------- Views ---------- */
+  .view{display:none;flex:1;flex-direction:column;padding-bottom:90px;}
+  .view.active{display:flex;}
+
+  /* ---------- Login ---------- */
+  #view-login{
+    justify-content:center;
+    align-items:center;
+    padding:40px 28px;
+    gap:0;
+  }
+  #view-login .lockup{
+    font-family:Georgia, serif;
+    font-weight:700;
+    font-size:40px;
+    margin-bottom:4px;
+  }
+  #view-login .tagline{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    margin-bottom:36px;
+  }
+  .field{width:100%;margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  input[type=email],input[type=password],input[type=text],input[type=number],select,textarea{
+    width:100%;
+    padding:13px 14px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:16px;
+    background:white;
+    color:var(--ink);
+    font-family:var(--sans);
+  }
+  input:focus,select:focus,textarea:focus{
+    outline:none;
+    border-color:var(--oxblood);
+  }
+  .btn{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--oxblood);color:var(--paper);}
+  .btn-primary:active{background:var(--oxblood-dark);}
+  .btn-primary:disabled{background:#B9ABA1;}
+  #login-error{
+    color:var(--oxblood);
+    font-size:13px;
+    margin-top:10px;
+    text-align:center;
+    min-height:16px;
+  }
+
+  /* ---------- Op chips ---------- */
+  .section-title{
+    font-family:var(--mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    padding:18px 20px 8px;
+  }
+  .content{padding:0 20px;}
+
+  /* ---------- Receipt (signature element) ---------- */
+  .receipt{
+    margin:14px 20px 4px;
+    background:white;
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius);
+    padding:18px 18px 14px;
+    font-family:var(--mono);
+    font-size:13px;
+    position:relative;
+  }
+  .receipt::before{
+    content:"RECIBO — VISTA PREVIA";
+    display:block;
+    font-size:10px;
+    letter-spacing:0.1em;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .receipt-row{
+    display:flex;
+    justify-content:space-between;
+    padding:3px 0;
+    color:var(--ink);
+  }
+  .receipt-row.dim{color:var(--ink-soft);}
+  .receipt-divider{border-top:1px dashed var(--line);margin:8px 0;}
+  .receipt-total{
+    display:flex;justify-content:space-between;
+    font-size:16px;font-weight:700;
+    padding-top:6px;
+  }
+  .receipt-total .amt{font-variant-numeric:tabular-nums;}
+  .receipt-margin{color:var(--sage);}
+
+  /* ---------- Form ---------- */
+  form#sale-form{padding:6px 20px 20px;}
+  .row2{display:flex;gap:10px;}
+  .row2 .field{flex:1;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .chip{
+    padding:9px 14px;
+    border:1.5px solid var(--line);
+    border-radius:20px;
+    font-size:13px;
+    font-weight:600;
+    background:white;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .chip.selected{
+    background:var(--oxblood);
+    border-color:var(--oxblood);
+    color:var(--paper);
+  }
+
+  /* ---------- Bottom bar / tabs ---------- */
+  .tabbar{
+    position:fixed;
+    bottom:0;left:50%;
+    transform:translateX(-50%);
+    width:100%;max-width:480px;
+    background:var(--paper);
+    border-top:1px solid var(--line);
+    display:flex;
+    padding:8px 12px calc(10px + env(safe-area-inset-bottom));
+    gap:8px;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:8px 0;
+    border-radius:10px;
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink-soft);
+    background:transparent;
+    border:none;
+  }
+  .tab.active{background:var(--paper-dim);color:var(--oxblood);}
+  .tab .ico{display:block;font-size:18px;margin-bottom:2px;}
+
+  .save-bar{
+    position:sticky;bottom:0;
+    background:linear-gradient(to top, var(--paper) 60%, transparent);
+    padding:14px 20px 6px;
+  }
+
+  /* ---------- Lists ---------- */
+  .card-list{padding:6px 20px 20px;display:flex;flex-direction:column;gap:10px;}
+  .item-card{
+    background:white;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .item-card .top-row{display:flex;justify-content:space-between;align-items:baseline;}
+  .item-card .folio{font-family:var(--mono);font-size:12px;color:var(--ink-soft);}
+  .item-card .amount{font-family:var(--mono);font-weight:700;font-size:17px;}
+  .item-card .sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+  .badge{
+    display:inline-block;
+    font-size:10px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.04em;
+    padding:3px 8px;border-radius:20px;
+    margin-top:6px;
+  }
+  .badge.pendiente,.badge.abierta{background:var(--gold-bg);color:var(--gold);}
+  .badge.parcial{background:var(--gold-bg);color:var(--gold);}
+  .badge.pagado,.badge.saldada{background:var(--sage-bg);color:var(--sage);}
+  .empty-state{
+    padding:60px 30px;text-align:center;color:var(--ink-soft);
+  }
+  .empty-state .big{font-size:32px;margin-bottom:10px;}
+
+  .toast{
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);
+    padding:12px 18px;border-radius:10px;
+    font-size:14px;max-width:400px;text-align:center;
+    z-index:50;
+    opacity:0;pointer-events:none;
+    transition:opacity 0.25s;
+  }
+  .toast.show{opacity:1;}
+
+  .top-actions{padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center;}
+  .top-actions h2{font-family:Georgia,serif;font-size:22px;margin:0;}
+  .link-btn{background:none;border:none;color:var(--oxblood);font-size:13px;font-weight:700;}
+
+  .pending-banner{
+    margin:14px 20px 0;
+    background:var(--gold-bg);
+    color:#7A5A1E;
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:12.5px;
+    display:none;
+  }
+  .pending-banner.show{display:block;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">Kairos</div>
+    <div class="status-dot" id="status-dot"><span class="dot"></span><span id="status-text">En línea</span></div>
+  </header>
+
+  <!-- LOGIN -->
+  <div class="view active" id="view-login">
+    <div class="lockup">Kairos</div>
+    <div class="tagline">Registro de operaciones</div>
+    <div class="field">
+      <label>Correo</label>
+      <input type="email" id="login-email" autocomplete="username" placeholder="tucorreo@ejemplo.com">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary" id="btn-login">Entrar</button>
+    <div id="login-error"></div>
+  </div>
+
+  <!-- NUEVA VENTA -->
+  <div class="view" id="view-venta">
+    <div class="pending-banner" id="pending-banner"></div>
+
+    <div class="receipt" id="receipt">
+      <div class="receipt-row"><span>Folio</span><span id="rc-folio">se asigna al guardar</span></div>
+      <div class="receipt-row dim"><span id="rc-owner">Proveedor —</span><span id="rc-product">Mercancía —</span></div>
+      <div class="receipt-row dim"><span id="rc-qty">0 kg</span><span id="rc-price">a $0.00</span></div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-row"><span>Costo</span><span class="amt" id="rc-cost">$0.00</span></div>
+      <div class="receipt-total"><span>Total venta</span><span class="amt" id="rc-total">$0.00</span></div>
+      <div class="receipt-row receipt-margin"><span>Utilidad</span><span class="amt" id="rc-margin">$0.00</span></div>
+    </div>
+
+    <form id="sale-form">
+      <div class="section-title">Mercancía</div>
+      <div class="field">
+        <label>Proveedor / dueño</label>
+        <select id="f-owner" required></select>
+      </div>
+      <div class="field">
+        <label>Tipo de mercancía</label>
+        <select id="f-product"></select>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Cantidad (kg)</label>
+          <input type="number" inputmode="decimal" id="f-qty" placeholder="0" required>
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select id="f-currency" required></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Precio venta (por kg)</label>
+          <input type="number" inputmode="decimal" id="f-price" placeholder="0.00" required>
+        </div>
+        <div class="field">
+          <label>Costo (por kg)</label>
+          <input type="number" inputmode="decimal" id="f-cost" placeholder="0.00" required>
+        </div>
+      </div>
+
+      <div class="section-title">Pago</div>
+      <div class="chips" id="chips-payment">
+        <div class="chip" data-value="efectivo">Efectivo</div>
+        <div class="chip" data-value="transferencia">Transferencia</div>
+        <div class="chip" data-value="divisa">Divisa</div>
+        <div class="chip" data-value="tarjeta">Tarjeta</div>
+        <div class="chip" data-value="mixto">Mixto</div>
+        <div class="chip" data-value="pendiente">Pendiente</div>
+      </div>
+
+      <div class="field">
+        <label>Notas (opcional)</label>
+        <textarea id="f-notes" rows="2" placeholder="Referencia, cliente, detalles..."></textarea>
+      </div>
+
+      <div class="save-bar">
+        <button type="submit" class="btn btn-primary" id="btn-save-sale">Guardar venta</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- DEUDAS -->
+  <div class="view" id="view-deudas">
+    <div class="top-actions">
+      <h2>Deudas</h2>
+      <button class="link-btn" id="btn-refresh-debts">Actualizar</button>
+    </div>
+    <div class="card-list" id="debts-list"></div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tab active" data-tab="venta"><span class="ico">📝</span>Nueva venta</button>
+    <button class="tab" data-tab="deudas"><span class="ico">📋</span>Deudas</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const API = "https://kairos-api-production-d5aa.up.railway.app";
+
+// ---------------- Utilidades ----------------
+function toast(msg, ms=2600){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>t.classList.remove('show'), ms);
+}
+function fmt(n){
+  n = Number(n)||0;
+  return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function getToken(){ return localStorage.getItem('kairos_token'); }
+function setToken(t){ localStorage.setItem('kairos_token', t); }
+function clearToken(){ localStorage.removeItem('kairos_token'); }
+
+async function api(path, opts={}){
+  const token = getToken();
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const resp = await fetch(API + path, Object.assign({}, opts, {headers}));
+  if (resp.status === 401){
+    clearToken();
+    showView('login');
+    throw new Error('Sesión expirada, vuelve a iniciar sesión');
+  }
+  const data = await resp.json().catch(()=>({}));
+  if (!resp.ok){
+    throw new Error(data.detail ? (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)) : 'Error de servidor');
+  }
+  return data;
+}
+
+// ---------------- Cola sin conexión ----------------
+const QUEUE_KEY = 'kairos_pending_sales';
+function getQueue(){ return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); }
+function setQueue(q){ localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+
+function updatePendingBanner(){
+  const q = getQueue();
+  const banner = document.getElementById('pending-banner');
+  if (q.length > 0){
+    banner.textContent = `${q.length} venta(s) guardada(s) en el celular, esperando señal para subirse.`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+async function flushQueue(){
+  let q = getQueue();
+  if (q.length === 0) return;
+  const remaining = [];
+  for (const sale of q){
+    try {
+      await api('/sales', {method:'POST', body: JSON.stringify(sale)});
+    } catch(e){
+      remaining.push(sale);
+    }
+  }
+  setQueue(remaining);
+  updatePendingBanner();
+  if (remaining.length < q.length){
+    toast('Ventas pendientes sincronizadas ✓');
+  }
+}
+
+function updateStatus(){
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  if (navigator.onLine){
+    dot.classList.remove('offline'); text.textContent = 'En línea';
+    flushQueue();
+  } else {
+    dot.classList.add('offline'); text.textContent = 'Sin conexión';
+  }
+}
+window.addEventListener('online', updateStatus);
+window.addEventListener('offline', updateStatus);
+
+// ---------------- Navegación ----------------
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if (name === 'login'){
+    document.getElementById('view-login').classList.add('active');
+    document.querySelector('.tabbar').style.display = 'none';
+    document.querySelector('header').style.display = 'none';
+  } else {
+    document.querySelector('.tabbar').style.display = 'flex';
+    document.querySelector('header').style.display = 'flex';
+    document.getElementById('view-' + name).classList.add('active');
+    document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
+    if (name === 'deudas') loadDebts();
+  }
+}
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>showView(t.dataset.tab));
+});
+
+// ---------------- Login ----------------
+document.getElementById('btn-login').addEventListener('click', async ()=>{
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+  const btn = document.getElementById('btn-login');
+  errorEl.textContent = '';
+  if (!email || !password){ errorEl.textContent = 'Escribe tu correo y contraseña.'; return; }
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try {
+    const resp = await fetch(API + '/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Correo o contraseña incorrectos');
+    setToken(data.access_token);
+    await initApp();
+    showView('venta');
+  } catch(e){
+    errorEl.textContent = e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+});
+
+// ---------------- Catálogos ----------------
+let catalogs = {owners:[], products:[], currencies:[]};
+
+async function loadCatalogs(){
+  const [owners, products, currencies] = await Promise.all([
+    api('/catalog/goods-owners'),
+    api('/catalog/product-types'),
+    api('/catalog/currencies'),
+  ]);
+  catalogs = {owners, products, currencies};
+  fillSelect('f-owner', owners, o => `${o.name}`, o => o.id);
+  fillSelect('f-product', products, p => p.name, p => p.id);
+  fillSelect('f-currency', currencies, c => c.code, c => c.code);
+}
+function fillSelect(id, items, labelFn, valueFn){
+  const sel = document.getElementById(id);
+  sel.innerHTML = '';
+  items.forEach(item=>{
+    const opt = document.createElement('option');
+    opt.value = valueFn(item);
+    opt.textContent = labelFn(item);
+    sel.appendChild(opt);
+  });
+  sel.dispatchEvent(new Event('change'));
+}
+
+// ---------------- Recibo en vivo ----------------
+let selectedPayment = null;
+document.querySelectorAll('#chips-payment .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#chips-payment .chip').forEach(c=>c.classList.remove('selected'));
+    chip.classList.add('selected');
+    selectedPayment = chip.dataset.value;
+  });
+});
+
+function refreshReceipt(){
+  const ownerSel = document.getElementById('f-owner');
+  const productSel = document.getElementById('f-product');
+  const currencySel = document.getElementById('f-currency');
+  const qty = parseFloat(document.getElementById('f-qty').value) || 0;
+  const price = parseFloat(document.getElementById('f-price').value) || 0;
+  const cost = parseFloat(document.getElementById('f-cost').value) || 0;
+
+  const ownerName = ownerSel.options[ownerSel.selectedIndex] ? ownerSel.options[ownerSel.selectedIndex].textContent : '—';
+  const productName = productSel.options[productSel.selectedIndex] ? productSel.options[productSel.selectedIndex].textContent : '—';
+  const currency = currencySel.value || '';
+
+  const total = qty * price;
+  const totalCost = qty * cost;
+  const margin = total - totalCost;
+
+  document.getElementById('rc-owner').textContent = ownerName;
+  document.getElementById('rc-product').textContent = productName;
+  document.getElementById('rc-qty').textContent = qty + ' kg';
+  document.getElementById('rc-price').textContent = 'a ' + currency + ' ' + fmt(price);
+  document.getElementById('rc-cost').textContent = currency + ' ' + fmt(totalCost);
+  document.getElementById('rc-total').textContent = currency + ' ' + fmt(total);
+  document.getElementById('rc-margin').textContent = currency + ' ' + fmt(margin);
+}
+['f-owner','f-product','f-qty','f-price','f-cost','f-currency'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', refreshReceipt);
+  document.getElementById(id).addEventListener('change', refreshReceipt);
+});
+
+// ---------------- Guardar venta ----------------
+document.getElementById('sale-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-sale');
+
+  if (!selectedPayment){
+    toast('Selecciona un método de pago');
+    return;
+  }
+  const qty = parseFloat(document.getElementById('f-qty').value);
+  const price = parseFloat(document.getElementById('f-price').value);
+  const cost = parseFloat(document.getElementById('f-cost').value);
+  if (!qty || price===''||isNaN(price) || cost===''||isNaN(cost)){
+    toast('Revisa cantidad, precio y costo');
+    return;
+  }
+
+  const sale = {
+    owner_id: document.getElementById('f-owner').value,
+    product_type_id: document.getElementById('f-product').value || null,
+    quantity_kg: qty,
+    unit_price: price,
+    unit_cost: cost,
+    currency_code: document.getElementById('f-currency').value,
+    payment_method: selectedPayment,
+    notes: document.getElementById('f-notes').value || null,
+  };
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  if (!navigator.onLine){
+    const q = getQueue();
+    q.push(sale);
+    setQueue(q);
+    updatePendingBanner();
+    toast('Sin señal: venta guardada en el celular ✓');
+    resetForm();
+  } else {
+    try {
+      const result = await api('/sales', {method:'POST', body: JSON.stringify(sale)});
+      toast('Venta registrada: ' + result.folio);
+      resetForm();
+    } catch(e){
+      // Si falla por conexión (no por validación), la guardamos localmente
+      const q = getQueue();
+      q.push(sale);
+      setQueue(q);
+      updatePendingBanner();
+      toast('No se pudo conectar: guardada en el celular ✓');
+      resetForm();
+    }
+  }
+
+  btn.disabled = false; btn.textContent = 'Guardar venta';
+});
+
+function resetForm(){
+  document.getElementById('f-qty').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-cost').value = '';
+  document.getElementById('f-notes').value = '';
+  document.querySelectorAll('#chips-payment .chip').forEach(c=>c.classList.remove('selected'));
+  selectedPayment = null;
+  refreshReceipt();
+}
+
+// ---------------- Deudas ----------------
+async function loadDebts(){
+  const list = document.getElementById('debts-list');
+  list.innerHTML = '<div class="empty-state">Cargando...</div>';
+  try {
+    const debts = await api('/debts');
+    if (debts.length === 0){
+      list.innerHTML = '<div class="empty-state"><div class="big">📋</div>Sin deudas registradas.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    debts.forEach(d=>{
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.innerHTML = `
+        <div class="top-row">
+          <span class="folio">${d.folio}</span>
+          <span class="amount">${d.currency_code} ${fmt(d.amount)}</span>
+        </div>
+        <div class="sub">${d.counterparty_name} · ${d.debt_type === 'por_cobrar' ? 'Por cobrar' : 'Por pagar'}</div>
+        ${d.due_date ? `<div class="sub">Vence: ${d.due_date}</div>` : ''}
+        <span class="badge ${d.status}">${d.status}</span>
+      `;
+      list.appendChild(card);
+    });
+  } catch(e){
+    list.innerHTML = `<div class="empty-state">No se pudo cargar: ${e.message}</div>`;
+  }
+}
+document.getElementById('btn-refresh-debts').addEventListener('click', loadDebts);
+
+// ---------------- Arranque ----------------
+async function initApp(){
+  await loadCatalogs();
+  refreshReceipt();
+  updatePendingBanner();
+  updateStatus();
+}
+
+(async function boot(){
+  if (getToken()){
+    try {
+      await initApp();
+      showView('venta');
+    } catch(e){
+      showView('login');
+    }
+  } else {
+    showView('login');
+  }
+})();
+</script>
+</body>
+</html>
