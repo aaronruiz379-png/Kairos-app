@@ -343,7 +343,7 @@
       <div class="row2">
         <div class="field">
           <label>Cantidad (kg)</label>
-          <input type="number" inputmode="decimal" id="f-qty" placeholder="0" required>
+          <input type="text" inputmode="decimal" id="f-qty" placeholder="0" required>
         </div>
         <div class="field">
           <label>Moneda</label>
@@ -353,11 +353,11 @@
       <div class="row2">
         <div class="field">
           <label>Precio venta (por kg)</label>
-          <input type="number" inputmode="decimal" id="f-price" placeholder="0.00" required>
+          <input type="text" inputmode="decimal" id="f-price" placeholder="0.00" required>
         </div>
         <div class="field">
           <label>Costo (por kg)</label>
-          <input type="number" inputmode="decimal" id="f-cost" placeholder="0.00" required>
+          <input type="text" inputmode="decimal" id="f-cost" placeholder="0.00" required>
         </div>
       </div>
 
@@ -413,6 +413,12 @@ function toast(msg, ms=2600){
 function fmt(n){
   n = Number(n)||0;
   return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+// Acepta "2,5" o "2.5" indistintamente (el teclado en español solo ofrece coma)
+function numVal(id){
+  const raw = document.getElementById(id).value.trim().replace(',', '.');
+  const n = parseFloat(raw);
+  return isNaN(n) ? null : n;
 }
 function getToken(){ return localStorage.getItem('kairos_token'); }
 function setToken(t){ localStorage.setItem('kairos_token', t); }
@@ -568,9 +574,9 @@ function refreshReceipt(){
   const ownerSel = document.getElementById('f-owner');
   const productSel = document.getElementById('f-product');
   const currencySel = document.getElementById('f-currency');
-  const qty = parseFloat(document.getElementById('f-qty').value) || 0;
-  const price = parseFloat(document.getElementById('f-price').value) || 0;
-  const cost = parseFloat(document.getElementById('f-cost').value) || 0;
+  const qty = numVal('f-qty') || 0;
+  const price = numVal('f-price') || 0;
+  const cost = numVal('f-cost') || 0;
 
   const ownerName = ownerSel.options[ownerSel.selectedIndex] ? ownerSel.options[ownerSel.selectedIndex].textContent : '—';
   const productName = productSel.options[productSel.selectedIndex] ? productSel.options[productSel.selectedIndex].textContent : '—';
@@ -602,10 +608,10 @@ document.getElementById('sale-form').addEventListener('submit', async (e)=>{
     toast('Selecciona un método de pago');
     return;
   }
-  const qty = parseFloat(document.getElementById('f-qty').value);
-  const price = parseFloat(document.getElementById('f-price').value);
-  const cost = parseFloat(document.getElementById('f-cost').value);
-  if (!qty || price===''||isNaN(price) || cost===''||isNaN(cost)){
+  const qty = numVal('f-qty');
+  const price = numVal('f-price');
+  const cost = numVal('f-cost');
+  if (qty === null || qty <= 0 || price === null || cost === null){
     toast('Revisa cantidad, precio y costo');
     return;
   }
