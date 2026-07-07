@@ -221,16 +221,17 @@
   .tab{
     flex:1;
     text-align:center;
-    padding:8px 0;
+    padding:7px 0;
     border-radius:10px;
-    font-size:12px;
+    font-size:10.5px;
     font-weight:700;
     color:var(--ink-soft);
     background:transparent;
     border:none;
+    line-height:1.2;
   }
   .tab.active{background:var(--paper-dim);color:var(--oxblood);}
-  .tab .ico{display:block;font-size:18px;margin-bottom:2px;}
+  .tab .ico{display:block;font-size:17px;margin-bottom:2px;}
 
   .save-bar{
     position:sticky;bottom:0;
@@ -290,6 +291,46 @@
     display:none;
   }
   .pending-banner.show{display:block;}
+
+  /* ---------- Gastos / Divisas (formularios simples) ---------- */
+  .simple-form{padding:6px 20px 20px;}
+
+  /* ---------- Abonos ---------- */
+  .pick-item{
+    background:white;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:10px;
+    cursor:pointer;
+  }
+  .pick-item .top-row{display:flex;justify-content:space-between;align-items:baseline;}
+  .pick-item .folio{font-family:var(--mono);font-size:12px;color:var(--ink-soft);}
+  .pick-item .amount{font-family:var(--mono);font-weight:700;font-size:16px;}
+  .pick-item .sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+
+  .sheet-overlay{
+    position:fixed;inset:0;
+    background:rgba(36,28,22,0.5);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:60;
+  }
+  .sheet-overlay.show{display:flex;}
+  .sheet{
+    width:100%;max-width:480px;
+    background:var(--paper);
+    border-radius:20px 20px 0 0;
+    padding:20px 20px calc(24px + env(safe-area-inset-bottom));
+    max-height:80vh;
+    overflow-y:auto;
+  }
+  .sheet h3{font-family:Georgia,serif;margin:0 0 4px;font-size:19px;}
+  .sheet .sub-info{font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
+  .sheet .close-x{
+    float:right;background:none;border:none;font-size:20px;color:var(--ink-soft);
+  }
 </style>
 </head>
 <body>
@@ -391,8 +432,137 @@
     <div class="card-list" id="debts-list"></div>
   </div>
 
+  <!-- GASTOS -->
+  <div class="view" id="view-gastos">
+    <div class="top-actions">
+      <h2>Nuevo gasto</h2>
+    </div>
+    <form class="simple-form" id="expense-form">
+      <div class="section-title" style="padding-left:0;">Tipo de gasto</div>
+      <div class="chips" id="chips-expense-category">
+        <div class="chip" data-value="diario">Gasto diario</div>
+        <div class="chip" data-value="operativo">Gasto operativo</div>
+      </div>
+
+      <div class="field">
+        <label>Motivo (ej. combustible, transporte, empaque)</label>
+        <input type="text" id="ge-type" placeholder="Ej. Combustible" required>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Monto</label>
+          <input type="text" inputmode="decimal" id="ge-amount" placeholder="0.00" required>
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select id="ge-currency" required></select>
+        </div>
+      </div>
+
+      <div class="section-title" style="padding-left:0;">Método de pago</div>
+      <div class="chips" id="chips-expense-payment">
+        <div class="chip" data-value="efectivo">Efectivo</div>
+        <div class="chip" data-value="transferencia">Transferencia</div>
+        <div class="chip" data-value="divisa">Divisa</div>
+        <div class="chip" data-value="tarjeta">Tarjeta</div>
+        <div class="chip" data-value="mixto">Mixto</div>
+      </div>
+
+      <div class="field">
+        <label>Notas (opcional)</label>
+        <textarea id="ge-notes" rows="2" placeholder="Detalles del gasto..."></textarea>
+      </div>
+
+      <div class="save-bar">
+        <button type="submit" class="btn btn-primary" id="btn-save-expense">Guardar gasto</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ABONOS -->
+  <div class="view" id="view-abonos">
+    <div class="top-actions">
+      <h2>Abonos</h2>
+      <button class="link-btn" id="btn-refresh-abonos">Actualizar</button>
+    </div>
+    <div class="section-title" style="padding-left:20px;">Ventas pendientes de cobro</div>
+    <div class="card-list" id="pending-sales-list" style="padding-top:0;"></div>
+    <div class="section-title" style="padding-left:20px;">Deudas abiertas</div>
+    <div class="card-list" id="pending-debts-list" style="padding-top:0;"></div>
+  </div>
+
+  <!-- DIVISAS -->
+  <div class="view" id="view-divisas">
+    <div class="top-actions">
+      <h2>Cambio de divisa</h2>
+    </div>
+    <form class="simple-form" id="exchange-form">
+      <div class="row2">
+        <div class="field">
+          <label>Entregas (moneda)</label>
+          <select id="de-from-currency" required></select>
+        </div>
+        <div class="field">
+          <label>Monto que entregas</label>
+          <input type="text" inputmode="decimal" id="de-from-amount" placeholder="0.00" required>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Recibes (moneda)</label>
+          <select id="de-to-currency" required></select>
+        </div>
+        <div class="field">
+          <label>Monto que recibes</label>
+          <input type="text" inputmode="decimal" id="de-to-amount" placeholder="0.00" required>
+        </div>
+      </div>
+      <div class="receipt" style="margin:4px 0 14px;">
+        <div class="receipt-row"><span>Tasa efectiva</span><span class="amt" id="de-rate">—</span></div>
+      </div>
+      <div class="field">
+        <label>Notas (opcional)</label>
+        <textarea id="de-notes" rows="2" placeholder="Con quién, referencia..."></textarea>
+      </div>
+      <div class="save-bar">
+        <button type="submit" class="btn btn-primary" id="btn-save-exchange">Guardar cambio</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- HOJA PARA REGISTRAR ABONO -->
+  <div class="sheet-overlay" id="payment-sheet-overlay">
+    <div class="sheet">
+      <button class="close-x" id="btn-close-sheet">✕</button>
+      <h3 id="sheet-title">Registrar abono</h3>
+      <div class="sub-info" id="sheet-subtitle"></div>
+      <div class="field">
+        <label>Monto del abono</label>
+        <input type="text" inputmode="decimal" id="pay-amount" placeholder="0.00">
+      </div>
+      <div class="field" id="pay-method-field">
+        <label>Método de pago</label>
+        <select id="pay-method">
+          <option value="efectivo">Efectivo</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="divisa">Divisa</option>
+          <option value="tarjeta">Tarjeta</option>
+          <option value="mixto">Mixto</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Notas (opcional)</label>
+        <textarea id="pay-notes" rows="2"></textarea>
+      </div>
+      <button class="btn btn-primary" id="btn-confirm-payment">Confirmar abono</button>
+    </div>
+  </div>
+
   <div class="tabbar">
-    <button class="tab active" data-tab="venta"><span class="ico">📝</span>Nueva venta</button>
+    <button class="tab active" data-tab="venta"><span class="ico">📝</span>Venta</button>
+    <button class="tab" data-tab="gastos"><span class="ico">🧾</span>Gastos</button>
+    <button class="tab" data-tab="abonos"><span class="ico">💵</span>Abonos</button>
+    <button class="tab" data-tab="divisas"><span class="ico">💱</span>Divisas</button>
     <button class="tab" data-tab="deudas"><span class="ico">📋</span>Deudas</button>
   </div>
 
@@ -502,6 +672,7 @@ function showView(name){
     document.getElementById('view-' + name).classList.add('active');
     document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
     if (name === 'deudas') loadDebts();
+    if (name === 'abonos') loadAbonos();
   }
 }
 document.querySelectorAll('.tab').forEach(t=>{
@@ -547,6 +718,9 @@ async function loadCatalogs(){
   fillSelect('f-owner', owners, o => `${o.name}`, o => o.id);
   fillSelect('f-product', products, p => p.name, p => p.id);
   fillSelect('f-currency', currencies, c => c.code, c => c.code);
+  fillSelect('ge-currency', currencies, c => c.code, c => c.code);
+  fillSelect('de-from-currency', currencies, c => c.code, c => c.code);
+  fillSelect('de-to-currency', currencies, c => c.code, c => c.code);
 }
 function fillSelect(id, items, labelFn, valueFn){
   const sel = document.getElementById(id);
@@ -695,6 +869,214 @@ async function loadDebts(){
   }
 }
 document.getElementById('btn-refresh-debts').addEventListener('click', loadDebts);
+
+// ---------------- Gastos ----------------
+let selectedExpenseCategory = null;
+let selectedExpensePayment = null;
+document.querySelectorAll('#chips-expense-category .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#chips-expense-category .chip').forEach(c=>c.classList.remove('selected'));
+    chip.classList.add('selected');
+    selectedExpenseCategory = chip.dataset.value;
+  });
+});
+document.querySelectorAll('#chips-expense-payment .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#chips-expense-payment .chip').forEach(c=>c.classList.remove('selected'));
+    chip.classList.add('selected');
+    selectedExpensePayment = chip.dataset.value;
+  });
+});
+
+document.getElementById('expense-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-expense');
+
+  if (!selectedExpenseCategory){ toast('Elige si es gasto diario u operativo'); return; }
+  if (!selectedExpensePayment){ toast('Selecciona un método de pago'); return; }
+  const amount = numVal('ge-amount');
+  const expenseType = document.getElementById('ge-type').value.trim();
+  if (!amount || amount <= 0){ toast('Revisa el monto'); return; }
+  if (!expenseType){ toast('Escribe el motivo del gasto'); return; }
+
+  const expense = {
+    category: selectedExpenseCategory,
+    expense_type: expenseType,
+    amount: amount,
+    currency_code: document.getElementById('ge-currency').value,
+    payment_method: selectedExpensePayment,
+    notes: document.getElementById('ge-notes').value || null,
+  };
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const result = await api('/expenses', {method:'POST', body: JSON.stringify(expense)});
+    toast('Gasto registrado: ' + result.folio);
+    document.getElementById('expense-form').reset();
+    document.querySelectorAll('#chips-expense-category .chip, #chips-expense-payment .chip').forEach(c=>c.classList.remove('selected'));
+    selectedExpenseCategory = null; selectedExpensePayment = null;
+  } catch(err){
+    toast('No se pudo guardar: ' + err.message);
+  }
+  btn.disabled = false; btn.textContent = 'Guardar gasto';
+});
+
+// ---------------- Divisas ----------------
+function refreshExchangeRate(){
+  const from = numVal('de-from-amount');
+  const to = numVal('de-to-amount');
+  const rateEl = document.getElementById('de-rate');
+  if (from && to && from > 0){
+    rateEl.textContent = fmt(to / from);
+  } else {
+    rateEl.textContent = '—';
+  }
+}
+document.getElementById('de-from-amount').addEventListener('input', refreshExchangeRate);
+document.getElementById('de-to-amount').addEventListener('input', refreshExchangeRate);
+
+document.getElementById('exchange-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-exchange');
+  const fromAmount = numVal('de-from-amount');
+  const toAmount = numVal('de-to-amount');
+  if (!fromAmount || !toAmount){ toast('Revisa los montos'); return; }
+
+  const exchange = {
+    from_currency: document.getElementById('de-from-currency').value,
+    from_amount: fromAmount,
+    to_currency: document.getElementById('de-to-currency').value,
+    to_amount: toAmount,
+    notes: document.getElementById('de-notes').value || null,
+  };
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const result = await api('/currency-exchanges', {method:'POST', body: JSON.stringify(exchange)});
+    toast('Cambio registrado: ' + result.folio);
+    document.getElementById('exchange-form').reset();
+    refreshExchangeRate();
+  } catch(err){
+    toast('No se pudo guardar: ' + err.message);
+  }
+  btn.disabled = false; btn.textContent = 'Guardar cambio';
+});
+
+// ---------------- Abonos ----------------
+async function loadAbonos(){
+  const salesList = document.getElementById('pending-sales-list');
+  const debtsList = document.getElementById('pending-debts-list');
+  salesList.innerHTML = '<div class="empty-state">Cargando...</div>';
+  debtsList.innerHTML = '<div class="empty-state">Cargando...</div>';
+
+  try {
+    const [pendientes, parciales] = await Promise.all([
+      api('/sales?estado=pendiente'),
+      api('/sales?estado=parcial'),
+    ]);
+    const sales = [...pendientes, ...parciales];
+    if (sales.length === 0){
+      salesList.innerHTML = '<div class="empty-state">Sin ventas pendientes de cobro.</div>';
+    } else {
+      salesList.innerHTML = '';
+      sales.forEach(s=>{
+        const div = document.createElement('div');
+        div.className = 'pick-item';
+        div.innerHTML = `
+          <div class="top-row">
+            <span class="folio">${s.folio}</span>
+            <span class="amount">${s.currency_code} ${fmt(s.total_amount)}</span>
+          </div>
+          <div class="sub">${s.sale_date} · estado: ${s.payment_status}</div>
+        `;
+        div.addEventListener('click', ()=>openPaymentSheet('venta', s));
+        salesList.appendChild(div);
+      });
+    }
+  } catch(e){
+    salesList.innerHTML = `<div class="empty-state">No se pudo cargar: ${e.message}</div>`;
+  }
+
+  try {
+    const [abiertas, parciales] = await Promise.all([
+      api('/debts?status=abierta'),
+      api('/debts?status=parcial'),
+    ]);
+    const debts = [...abiertas, ...parciales];
+    if (debts.length === 0){
+      debtsList.innerHTML = '<div class="empty-state">Sin deudas abiertas.</div>';
+    } else {
+      debtsList.innerHTML = '';
+      debts.forEach(d=>{
+        const div = document.createElement('div');
+        div.className = 'pick-item';
+        div.innerHTML = `
+          <div class="top-row">
+            <span class="folio">${d.folio}</span>
+            <span class="amount">${d.currency_code} ${fmt(d.amount)}</span>
+          </div>
+          <div class="sub">${d.counterparty_name} · ${d.debt_type === 'por_cobrar' ? 'Por cobrar' : 'Por pagar'}</div>
+        `;
+        div.addEventListener('click', ()=>openPaymentSheet('deuda', d));
+        debtsList.appendChild(div);
+      });
+    }
+  } catch(e){
+    debtsList.innerHTML = `<div class="empty-state">No se pudo cargar: ${e.message}</div>`;
+  }
+}
+document.getElementById('btn-refresh-abonos').addEventListener('click', loadAbonos);
+
+let currentPaymentTarget = null; // {type: 'venta'|'deuda', item}
+
+function openPaymentSheet(type, item){
+  currentPaymentTarget = {type, item};
+  document.getElementById('sheet-title').textContent = type === 'venta' ? 'Abonar a venta' : 'Abonar a deuda';
+  document.getElementById('sheet-subtitle').textContent = type === 'venta'
+    ? `${item.folio} · Total ${item.currency_code} ${fmt(item.total_amount)}`
+    : `${item.folio} · ${item.counterparty_name} · ${item.currency_code} ${fmt(item.amount)}`;
+  document.getElementById('pay-method-field').style.display = type === 'venta' ? 'block' : 'none';
+  document.getElementById('pay-amount').value = '';
+  document.getElementById('pay-notes').value = '';
+  document.getElementById('payment-sheet-overlay').classList.add('show');
+}
+function closePaymentSheet(){
+  document.getElementById('payment-sheet-overlay').classList.remove('show');
+  currentPaymentTarget = null;
+}
+document.getElementById('btn-close-sheet').addEventListener('click', closePaymentSheet);
+document.getElementById('payment-sheet-overlay').addEventListener('click', (e)=>{
+  if (e.target.id === 'payment-sheet-overlay') closePaymentSheet();
+});
+
+document.getElementById('btn-confirm-payment').addEventListener('click', async ()=>{
+  if (!currentPaymentTarget) return;
+  const btn = document.getElementById('btn-confirm-payment');
+  const amount = numVal('pay-amount');
+  if (!amount || amount <= 0){ toast('Escribe el monto del abono'); return; }
+
+  const { type, item } = currentPaymentTarget;
+  const payload = {
+    amount: amount,
+    currency_code: item.currency_code,
+    notes: document.getElementById('pay-notes').value || null,
+  };
+  if (type === 'venta'){
+    payload.payment_method = document.getElementById('pay-method').value;
+  }
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const path = type === 'venta' ? `/sales/${item.id}/payments` : `/debts/${item.id}/payments`;
+    await api(path, {method:'POST', body: JSON.stringify(payload)});
+    toast('Abono registrado ✓');
+    closePaymentSheet();
+    loadAbonos();
+  } catch(err){
+    toast('No se pudo guardar: ' + err.message);
+  }
+  btn.disabled = false; btn.textContent = 'Confirmar abono';
+});
 
 // ---------------- Arranque ----------------
 async function initApp(){
