@@ -518,7 +518,7 @@
         </div>
       </div>
       <div class="receipt" style="margin:4px 0 14px;">
-        <div class="receipt-row"><span>Tasa efectiva</span><span class="amt" id="de-rate">—</span></div>
+        <div class="receipt-row"><span id="de-rate-label">Tasa efectiva</span><span class="amt" id="de-rate">—</span></div>
       </div>
       <div class="field">
         <label>Notas (opcional)</label>
@@ -926,12 +926,23 @@ function refreshExchangeRate(){
   const from = numVal('de-from-amount');
   const to = numVal('de-to-amount');
   const rateEl = document.getElementById('de-rate');
-  if (from && to && from > 0){
-    rateEl.textContent = fmt(to / from);
+  const labelEl = document.getElementById('de-rate-label');
+  const fromCur = document.getElementById('de-from-currency').value;
+  const toCur = document.getElementById('de-to-currency').value;
+
+  if (from && to && to > 0){
+    const rate = from / to; // cuánto de "from" equivale a 1 unidad de "to"
+    labelEl.textContent = `1 ${toCur} =`;
+    // Más decimales si el número es pequeño, para no perder precisión (ej. tasas tipo 0,0016)
+    const decimals = rate < 1 ? 6 : 2;
+    rateEl.textContent = rate.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:decimals}) + ' ' + fromCur;
   } else {
+    labelEl.textContent = 'Tasa efectiva';
     rateEl.textContent = '—';
   }
 }
+document.getElementById('de-from-currency').addEventListener('change', refreshExchangeRate);
+document.getElementById('de-to-currency').addEventListener('change', refreshExchangeRate);
 document.getElementById('de-from-amount').addEventListener('input', refreshExchangeRate);
 document.getElementById('de-to-amount').addEventListener('input', refreshExchangeRate);
 
