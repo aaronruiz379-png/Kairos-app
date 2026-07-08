@@ -357,6 +357,31 @@
     <div id="login-error"></div>
   </div>
 
+  <!-- RESUMEN -->
+  <div class="view active" id="view-resumen">
+    <div class="top-actions">
+      <h2>Resumen</h2>
+      <button class="link-btn" id="btn-refresh-resumen">Actualizar</button>
+    </div>
+    <div class="content">
+      <div class="chips" id="chips-periodo">
+        <div class="chip selected" data-days="7">7 días</div>
+        <div class="chip" data-days="30">30 días</div>
+        <div class="chip" data-days="90">90 días</div>
+      </div>
+    </div>
+
+    <div class="content" id="resumen-cards">
+      <div class="empty-state">Cargando...</div>
+    </div>
+
+    <div class="section-title">Ventas recientes</div>
+    <div class="card-list" id="resumen-ventas-list" style="padding-top:0;"></div>
+
+    <div class="section-title">Gastos recientes</div>
+    <div class="card-list" id="resumen-gastos-list" style="padding-top:0;"></div>
+  </div>
+
   <!-- NUEVA VENTA -->
   <div class="view" id="view-venta">
     <div class="pending-banner" id="pending-banner"></div>
@@ -558,12 +583,78 @@
     </div>
   </div>
 
+  <!-- MÁS: COMISIONES E INVERSIONES -->
+  <div class="view" id="view-mas">
+    <div class="top-actions">
+      <h2>Más</h2>
+    </div>
+    <div class="content" style="padding:0 20px;">
+      <div class="chips" id="chips-mas-section">
+        <div class="chip selected" data-value="comisiones">Comisiones</div>
+        <div class="chip" data-value="inversiones">Inversiones</div>
+      </div>
+    </div>
+
+    <!-- Comisiones -->
+    <form class="simple-form" id="commission-form" style="padding-top:0;">
+      <div class="field">
+        <label>Venta relacionada</label>
+        <select id="co-sale" required></select>
+      </div>
+      <div class="field">
+        <label>Comisión por kg</label>
+        <input type="text" inputmode="decimal" id="co-unit" placeholder="0.00" required>
+      </div>
+      <div class="receipt" style="margin:4px 0 14px;">
+        <div class="receipt-row"><span>Comisión total estimada</span><span class="amt" id="co-total">—</span></div>
+      </div>
+      <div class="field">
+        <label>Notas (opcional)</label>
+        <textarea id="co-notes" rows="2"></textarea>
+      </div>
+      <div class="save-bar">
+        <button type="submit" class="btn btn-primary" id="btn-save-commission">Guardar comisión</button>
+      </div>
+    </form>
+
+    <!-- Inversiones -->
+    <form class="simple-form" id="investment-form" style="padding-top:0;display:none;">
+      <div class="field">
+        <label>Tipo de inversión</label>
+        <input type="text" id="in-type" placeholder="Ej. Compra de equipo, capital de trabajo..." required>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Monto</label>
+          <input type="text" inputmode="decimal" id="in-amount" placeholder="0.00" required>
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select id="in-currency" required></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Margen esperado % (opcional)</label>
+        <input type="text" inputmode="decimal" id="in-margin" placeholder="Ej. 15">
+      </div>
+      <div class="field">
+        <label>Notas (opcional)</label>
+        <textarea id="in-notes" rows="2"></textarea>
+      </div>
+      <div class="save-bar">
+        <button type="submit" class="btn btn-primary" id="btn-save-investment">Guardar inversión</button>
+      </div>
+    </form>
+  </div>
+
   <div class="tabbar">
-    <button class="tab active" data-tab="venta"><span class="ico">📝</span>Venta</button>
+    <button class="tab active" data-tab="resumen"><span class="ico">📊</span>Resumen</button>
+    <button class="tab" data-tab="venta"><span class="ico">📝</span>Venta</button>
     <button class="tab" data-tab="gastos"><span class="ico">🧾</span>Gastos</button>
     <button class="tab" data-tab="abonos"><span class="ico">💵</span>Abonos</button>
     <button class="tab" data-tab="divisas"><span class="ico">💱</span>Divisas</button>
     <button class="tab" data-tab="deudas"><span class="ico">📋</span>Deudas</button>
+    <button class="tab" data-tab="mas"><span class="ico">⋯</span>Más</button>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -673,6 +764,8 @@ function showView(name){
     document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
     if (name === 'deudas') loadDebts();
     if (name === 'abonos') loadAbonos();
+    if (name === 'mas') loadRecentSalesForCommission();
+    if (name === 'resumen') loadResumen();
   }
 }
 document.querySelectorAll('.tab').forEach(t=>{
@@ -698,7 +791,7 @@ document.getElementById('btn-login').addEventListener('click', async ()=>{
     if (!resp.ok) throw new Error(data.detail || 'Correo o contraseña incorrectos');
     setToken(data.access_token);
     await initApp();
-    showView('venta');
+    showView('resumen');
   } catch(e){
     errorEl.textContent = e.message;
   }
@@ -721,6 +814,7 @@ async function loadCatalogs(){
   fillSelect('ge-currency', currencies, c => c.code, c => c.code);
   fillSelect('de-from-currency', currencies, c => c.code, c => c.code);
   fillSelect('de-to-currency', currencies, c => c.code, c => c.code);
+  fillSelect('in-currency', currencies, c => c.code, c => c.code);
 }
 function fillSelect(id, items, labelFn, valueFn){
   const sel = document.getElementById(id);
@@ -1089,6 +1183,213 @@ document.getElementById('btn-confirm-payment').addEventListener('click', async (
   btn.disabled = false; btn.textContent = 'Confirmar abono';
 });
 
+// ---------------- Más: selector Comisiones / Inversiones ----------------
+document.querySelectorAll('#chips-mas-section .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#chips-mas-section .chip').forEach(c=>c.classList.remove('selected'));
+    chip.classList.add('selected');
+    const section = chip.dataset.value;
+    document.getElementById('commission-form').style.display = section === 'comisiones' ? 'block' : 'none';
+    document.getElementById('investment-form').style.display = section === 'inversiones' ? 'block' : 'none';
+  });
+});
+
+// ---------------- Comisiones ----------------
+let recentSalesCache = [];
+
+async function loadRecentSalesForCommission(){
+  const select = document.getElementById('co-sale');
+  select.innerHTML = '<option>Cargando...</option>';
+  try {
+    const sales = await api('/sales');
+    recentSalesCache = sales.slice(0, 30); // las más recientes
+    select.innerHTML = '';
+    recentSalesCache.forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.folio} · ${s.quantity_kg}kg · ${s.currency_code} ${fmt(s.total_amount)}`;
+      select.appendChild(opt);
+    });
+    select.dispatchEvent(new Event('change'));
+  } catch(e){
+    select.innerHTML = '<option>No se pudieron cargar las ventas</option>';
+  }
+}
+
+function refreshCommissionTotal(){
+  const saleId = document.getElementById('co-sale').value;
+  const sale = recentSalesCache.find(s => s.id === saleId);
+  const unit = numVal('co-unit');
+  const totalEl = document.getElementById('co-total');
+  if (sale && unit !== null){
+    totalEl.textContent = sale.currency_code + ' ' + fmt(unit * sale.quantity_kg);
+  } else {
+    totalEl.textContent = '—';
+  }
+}
+document.getElementById('co-sale').addEventListener('change', refreshCommissionTotal);
+document.getElementById('co-unit').addEventListener('input', refreshCommissionTotal);
+
+document.getElementById('commission-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-commission');
+  const saleId = document.getElementById('co-sale').value;
+  const unit = numVal('co-unit');
+  if (!saleId){ toast('Elige una venta'); return; }
+  if (unit === null || unit < 0){ toast('Revisa la comisión por kg'); return; }
+
+  const commission = {
+    sale_id: saleId,
+    unit_commission: unit,
+    notes: document.getElementById('co-notes').value || null,
+  };
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const result = await api('/commissions', {method:'POST', body: JSON.stringify(commission)});
+    toast('Comisión registrada: ' + result.folio);
+    document.getElementById('co-unit').value = '';
+    document.getElementById('co-notes').value = '';
+    refreshCommissionTotal();
+  } catch(err){
+    toast('No se pudo guardar: ' + err.message);
+  }
+  btn.disabled = false; btn.textContent = 'Guardar comisión';
+});
+
+// ---------------- Inversiones ----------------
+document.getElementById('investment-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-investment');
+  const amount = numVal('in-amount');
+  const type = document.getElementById('in-type').value.trim();
+  if (!type){ toast('Escribe el tipo de inversión'); return; }
+  if (!amount || amount <= 0){ toast('Revisa el monto'); return; }
+
+  const margin = numVal('in-margin');
+  const investment = {
+    investment_type: type,
+    amount: amount,
+    currency_code: document.getElementById('in-currency').value,
+    expected_margin: margin !== null ? margin : null,
+    notes: document.getElementById('in-notes').value || null,
+  };
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const result = await api('/investments', {method:'POST', body: JSON.stringify(investment)});
+    toast('Inversión registrada: ' + result.folio);
+    document.getElementById('investment-form').reset();
+  } catch(err){
+    toast('No se pudo guardar: ' + err.message);
+  }
+  btn.disabled = false; btn.textContent = 'Guardar inversión';
+});
+
+// ---------------- Resumen ----------------
+let resumenDias = 7;
+document.querySelectorAll('#chips-periodo .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#chips-periodo .chip').forEach(c=>c.classList.remove('selected'));
+    chip.classList.add('selected');
+    resumenDias = parseInt(chip.dataset.days, 10);
+    loadResumen();
+  });
+});
+document.getElementById('btn-refresh-resumen').addEventListener('click', loadResumen);
+
+function fechaHaceNDias(n){
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0,10);
+}
+
+async function loadResumen(){
+  const cardsEl = document.getElementById('resumen-cards');
+  const ventasListEl = document.getElementById('resumen-ventas-list');
+  const gastosListEl = document.getElementById('resumen-gastos-list');
+  cardsEl.innerHTML = '<div class="empty-state">Cargando...</div>';
+  ventasListEl.innerHTML = '';
+  gastosListEl.innerHTML = '';
+
+  const desde = fechaHaceNDias(resumenDias);
+
+  try {
+    const resumen = await api(`/dashboard/resumen?desde=${desde}`);
+    const porMoneda = resumen.detalle_por_moneda || {};
+    let monedaHtml = '';
+    Object.keys(porMoneda).forEach(codigo=>{
+      const m = porMoneda[codigo];
+      monedaHtml += `
+        <div class="item-card">
+          <div class="top-row"><span class="folio">${codigo}</span></div>
+          <div class="sub">Entradas: ${codigo} ${fmt(m.entradas)}</div>
+          <div class="sub">Salidas: ${codigo} ${fmt(m.salidas)}</div>
+        </div>`;
+    });
+    cardsEl.innerHTML = `
+      <div class="item-card">
+        <div class="top-row"><span class="folio">Ventas registradas</span><span class="amount">${resumen.ventas_en_periodo}</span></div>
+      </div>
+      <div class="item-card">
+        <div class="top-row"><span class="folio">Utilidad propia</span><span class="amount">${fmt(resumen.utilidad_propia_total)}</span></div>
+        <div class="sub">Solo mercancía propia de Kairos, sin contar comisiones</div>
+      </div>
+      <div class="item-card">
+        <div class="top-row"><span class="folio">Comisiones generadas</span><span class="amount">${fmt(resumen.comisiones_generadas_total)}</span></div>
+      </div>
+      ${monedaHtml}
+    `;
+  } catch(e){
+    cardsEl.innerHTML = `<div class="empty-state">No se pudo cargar: ${e.message}</div>`;
+  }
+
+  try {
+    const ventas = await api(`/sales?desde=${desde}`);
+    if (ventas.length === 0){
+      ventasListEl.innerHTML = '<div class="empty-state">Sin ventas en este período.</div>';
+    } else {
+      ventas.slice(0, 15).forEach(s=>{
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        div.innerHTML = `
+          <div class="top-row">
+            <span class="folio">${s.folio}</span>
+            <span class="amount">${s.currency_code} ${fmt(s.total_amount)}</span>
+          </div>
+          <div class="sub">${s.sale_date} · ${s.quantity_kg} kg</div>
+          <span class="badge ${s.payment_status}">${s.payment_status}</span>
+        `;
+        ventasListEl.appendChild(div);
+      });
+    }
+  } catch(e){
+    ventasListEl.innerHTML = `<div class="empty-state">No se pudo cargar: ${e.message}</div>`;
+  }
+
+  try {
+    const gastos = await api(`/expenses?desde=${desde}`);
+    if (gastos.length === 0){
+      gastosListEl.innerHTML = '<div class="empty-state">Sin gastos en este período.</div>';
+    } else {
+      gastos.slice(0, 15).forEach(g=>{
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        div.innerHTML = `
+          <div class="top-row">
+            <span class="folio">${g.folio}</span>
+            <span class="amount">${g.currency_code} ${fmt(g.amount)}</span>
+          </div>
+          <div class="sub">${g.expense_date} · ${g.expense_type} · ${g.category}</div>
+        `;
+        gastosListEl.appendChild(div);
+      });
+    }
+  } catch(e){
+    gastosListEl.innerHTML = `<div class="empty-state">No se pudo cargar: ${e.message}</div>`;
+  }
+}
+
 // ---------------- Arranque ----------------
 async function initApp(){
   await loadCatalogs();
@@ -1101,7 +1402,7 @@ async function initApp(){
   if (getToken()){
     try {
       await initApp();
-      showView('venta');
+      showView('resumen');
     } catch(e){
       showView('login');
     }
